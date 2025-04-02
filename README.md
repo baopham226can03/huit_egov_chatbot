@@ -66,6 +66,7 @@ huit_egov_chatbot/
 ```bash
 git clone https://github.com/yourusername/huit_egov_chatbot.git
 cd huit_egov_chatbot
+```
 
 ### 2. Tạo file .env
 
