@@ -23,6 +23,7 @@
    - Chia nhỏ nội dung PDF thành các chunk để tránh vượt giới hạn token của OpenAI API.
 
 ## Cấu trúc dự án
+```
 huit_egov_chatbot/
 │
 ├── data/                    # Thư mục chứa các file PDF hướng dẫn
@@ -41,6 +42,7 @@ huit_egov_chatbot/
 ├── main.py                 # File chạy chính
 ├── requirements.txt        # Danh sách thư viện cần cài đặt
 └── README.md               # Tài liệu hướng dẫn (bạn đang đọc)
+```
 
 ### Chi tiết các file
 
