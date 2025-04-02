@@ -174,19 +174,15 @@ if function_name == "get_user_info":
 
 ### Tích hợp API thực tế
 
-Thay hàm giả lập trong `src/functions.py` bằng API của HUIT eGov:
+Thay hàm giả lập trong `src/functions.py` bằng API khác:
 
 ```python
 import requests
 
 def get_user_schedule(user_id):
-    response = requests.get(f"https://huit-egov-api.com/schedule/{user_id}")
+    response = requests.get(f"https://example-api")
     return response.json()
 ```
-
-### Thay đổi mô hình embedding
-
-Trong `.env`, thêm `EMBEDDING_MODEL` (ví dụ: `VoVanPhuc/sup-SimCSE-VietNamese-phobert-base`) và cập nhật `src/pdf_processor.py` để dùng mô hình này (yêu cầu tích hợp Hugging Face).
 
 ## Xử lý lỗi thường gặp
 
@@ -201,27 +197,3 @@ Trong `.env`, thêm `EMBEDDING_MODEL` (ví dụ: `VoVanPhuc/sup-SimCSE-VietNames
 - **Tối ưu hóa**:
   - Giảm `max_tokens` trong `pdf_processor.py` để tạo nhiều chunk nhỏ hơn, tăng độ chính xác truy xuất.
   - Lưu trữ vector store trên đĩa bằng `chromadb.PersistentClient` thay vì RAM.
-
-## Đóng góp
-
-1. Fork repository.
-2. Tạo branch mới:
-   
-   ```bash
-   git checkout -b feature/your-feature
-   ```
-
-3. Commit thay đổi:
-   
-   ```bash
-   git commit -m "Add your feature"
-   ```
-
-4. Push lên branch:
-   
-   ```bash
-   git push origin feature/your-feature
-   ```
-
-5. Tạo Pull Request.
-

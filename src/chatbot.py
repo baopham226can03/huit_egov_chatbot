@@ -50,10 +50,27 @@ class Chatbot:
                 })
                 # 6. Gửi kết quả hàm trở lại model
                 messages.append({
-                    "role": "tool",
-                    "content": str(function_result),
-                    "tool_call_id": tool_call.id
+                    "role": "assistant",
+                    "tool_calls": [
+                        {
+                            "id": tool_call.id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_call.function.name,
+                                "arguments": tool_call.function.arguments
+                            }
+                        }
+                    ]
                 })
+                messages.append({
+                    "role": "tool",
+                    "name": tool_call.function.name,
+                    "tool_call_id": tool_call.id,  # Thêm tool_call_id vào đây
+                    "content": str(function_result)
+                })
+
+
+
                 final_response = self.client.chat.completions.create(
                     model=Config.LLM_MODEL,
                     messages=messages
