@@ -21,23 +21,36 @@
    - Sử dụng mô hình `gpt-4o-mini` của OpenAI để tạo câu trả lời tự nhiên và chính xác.
 4. **Xử lý văn bản lớn**:
    - Chia nhỏ nội dung PDF thành các chunk để tránh vượt giới hạn token của OpenAI API.
+5. **Phân hệ động**: 
+   - Sử dụng `masterbot` để phân loại câu hỏi và chuyển hướng đến `subbot` phù hợp dựa trên các phân hệ (ví dụ: tài chính, học vụ).
 
 ## Cấu trúc dự án
 ```
 huit_egov_chatbot/
-│
-├── data/                    # Thư mục chứa các file PDF hướng dẫn
-│   ├── guide1.pdf          # Ví dụ file PDF
-│   └── ...
-│
+├── data/                    # Thư mục chứa dữ liệu PDF theo phân hệ
+│   ├── Data1/            # PDF hướng dẫn về lĩnh vực 1
+│   │   ├── guide1.pdf
+│   │   └── ...
+│   ├── Data2/            # PDF hướng dẫn về lĩnh vực 2
+│   │   ├── guide2.pdf
+│   │   └── ...
+│   └── ...                 # Các phân hệ khác
 ├── src/                    # Thư mục chứa mã nguồn
-│   ├── init.py        # Khởi tạo package
-│   ├── config.py          # Cấu hình và load biến môi trường
-│   ├── vector_store.py    # Quản lý vector database (ChromaDB)
-│   ├── pdf_processor.py   # Xử lý và embedding PDF
-│   ├── functions.py       # Định nghĩa các hàm function calling
-│   └── chatbot.py         # Logic chính của chatbot
-│
+│   ├── common/             # Code dùng chung
+│   │   ├── init.py
+│   │   ├── config.py       # Cấu hình
+│   │   ├── vector_store.py # Quản lý ChromaDB
+│   │   ├── pdf_processor.py # Xử lý PDF
+│   │   └── functions.py    # Hàm function calling
+│   ├── masterbot/          # Logic của masterbot
+│   │   ├── init.py
+│   │   └── router.py       # Phân loại và chuyển hướng
+│   ├── subbots/            # Logic của subbot
+│   │   ├── init.py
+│   │   └── subbot.py       # Class SubBot tổng quát
+│   ├── init.py
+│   └── chatbot.py          # Logic chatbot chung
+├── bots_config.yaml        # File cấu hình subbots
 ├── .env                    # File chứa biến môi trường (không commit lên git)
 ├── main.py                 # File chạy chính
 ├── requirements.txt        # Danh sách thư viện cần cài đặt
@@ -46,12 +59,15 @@ huit_egov_chatbot/
 
 ### Chi tiết các file
 
-- **`main.py`**: Điểm khởi đầu của ứng dụng, khởi tạo các thành phần và chạy vòng lặp chatbot.
-- **`src/config.py`**: Load biến môi trường từ `.env` (API key, model, index name).
-- **`src/vector_store.py`**: Quản lý ChromaDB để lưu trữ và truy xuất embeddings.
+- **`main.py`**: Điểm khởi đầu, khởi tạo `masterbot` và các `subbots` từ cấu hình, chạy vòng lặp chatbot.
+- **`src/config.py`**: Load biến môi trường từ `.env` (API key, model).
+- **`src/vector_store.py`**: Quản lý ChromaDB để lưu trữ và truy xuất embeddings theo collection riêng cho từng subbot.
 - **`src/pdf_processor.py`**: Đọc PDF, chia nhỏ nội dung, tạo embeddings và lưu vào vector store.
 - **`src/functions.py`**: Định nghĩa các hàm function calling (hiện có `get_user_schedule`).
-- **`src/chatbot.py`**: Xử lý câu hỏi người dùng, tích hợp RAG và function calling.
+- **`src/chatbot.py`**: Xử lý câu hỏi người dùng, tích hợp RAG và function calling cho từng subbot.
+- **`src/masterbot/router.py`**: Phân loại câu hỏi và chuyển hướng đến subbot phù hợp.
+- **`src/subbots/subbot.py`**: Class tổng quát để khởi tạo và xử lý từng phân hệ.
+- **`bots_config.yaml`**: Cấu hình danh sách subbots (tên, đường dẫn dữ liệu, collection).
 
 ## Yêu cầu hệ thống
 
@@ -97,10 +113,12 @@ Các thư viện bao gồm:
 - `PyPDF2`: Đọc file PDF.
 - `python-dotenv`: Load biến môi trường.
 - `tqdm`: Thanh tiến trình.
+- `pyyaml`: Đọc file cấu hình YAML.
+
 
 ### 4. Chuẩn bị dữ liệu
 
-- Đặt các file PDF hướng dẫn vào thư mục `data/`.
+- Tạo các thư mục con trong `data/` và đặt các file PDF hướng dẫn tương ứng..
 - Đảm bảo ít nhất một file PDF tồn tại để chatbot có dữ liệu xử lý.
 
 ## Cách sử dụng
@@ -113,34 +131,41 @@ python main.py
 
 Chương trình sẽ:
 
-1. Xử lý tất cả PDF trong thư mục `data/`, chia nhỏ và lưu vào ChromaDB.
-2. Hiển thị prompt để bạn nhập câu hỏi.
+1. Khởi tạo các subbots từ bots_config.yaml, xử lý PDF trong từng thư mục và lưu vào ChromaDB.
+2. Khởi tạo masterbot để phân loại và chuyển hướng câu hỏi.
+3. Hiển thị prompt để bạn nhập câu hỏi.
 
 ### Ví dụ tương tác
 
 ```text
-Processing PDFs: 100%|██████████| 1/1 [00:07<00:00,  7.45s/it]
-Processed and stored 6 chunks from PDFs.
+Debug - Subbots initialized: ['FinanceBot', 'AcademicBot']
+Processing PDFs in data/finance: 100%|██████████| 1/1 [00:07<00:00,  7.45s/it]
+Processed and stored 6 chunks from data/BinhThuan.
+Processing PDFs in data/academics: 100%|██████████| 1/1 [00:05<00:00,  5.20s/it]
+Processed and stored 4 chunks from data/TuyenSinh.
 
-Nhập câu hỏi (hoặc 'exit' để thoát): Đăng nhập thế nào ạ
-Chatbot: Để đăng nhập vào hệ thống HUIT eGov, bạn cần làm theo các bước sau: [dựa trên nội dung PDF].
+Nhập câu hỏi (hoặc 'exit' để thoát): Học phí kỳ này bao nhiêu?
+Học phí kỳ này là 15 triệu đồng.
 
-Nhập câu hỏi (hoặc 'exit' để thoát): Lịch của tôi hôm nay là gì
-Chatbot: Lịch hôm nay của bạn: 09:00 - Họp nhóm, 14:00 - Gửi báo cáo.
+Nhập câu hỏi (hoặc 'exit' để thoát): Đăng ký HUIT eGov thế nào?
+Chọn Đăng ký, nhập đủ thông tin và xác nhận đăng ký.
 
 Nhập câu hỏi (hoặc 'exit' để thoát): exit
 ```
 
 ## Quy trình hoạt động
 
-1. **User Prompt**: Người dùng nhập câu hỏi (ví dụ: "Đăng nhập thế nào ạ").
-2. **Backend**:
-   - Embedding câu hỏi bằng `text-embedding-ada-002`.
-   - Truy xuất 3 đoạn nội dung liên quan nhất từ ChromaDB.
-   - Gửi câu hỏi, system prompt, nội dung truy xuất và danh sách hàm đến `gpt-4o-mini`.
-   - Nếu cần, gọi hàm (ví dụ: `get_user_schedule`) và gửi kết quả trở lại model.
-   - Model tạo câu trả lời cuối cùng.
-3. **Trả lời**: Chatbot hiển thị câu trả lời cho người dùng.
+1. **User Prompt**: Người dùng nhập câu hỏi (ví dụ: "Học phí kỳ này bao nhiêu?").
+2. **MasterBot**:
+ - Phân loại câu hỏi bằng LLM để xác định phân hệ phù hợp (ví dụ: FinanceBot).
+ - Chuyển hướng câu hỏi đến subbot tương ứng.
+3. **SubBot**:
+ - Embedding câu hỏi bằng text-embedding-ada-002.
+ - Truy xuất 3 đoạn nội dung liên quan nhất từ ChromaDB.
+ - Gửi câu hỏi, system prompt, nội dung truy xuất và danh sách hàm đến gpt-4o-mini.
+ - Nếu cần, gọi hàm (ví dụ: get_user_schedule) và gửi kết quả trở lại model.
+ - Model tạo câu trả lời cuối cùng.
+4. **Trả lời**: Chatbot hiển thị câu trả lời cho người dùng.
 
 ## Tùy chỉnh và mở rộng
 
@@ -186,14 +211,8 @@ def get_user_schedule(user_id):
 
 ## Xử lý lỗi thường gặp
 
-- **`ModuleNotFoundError`**: Kiểm tra `pip install -r requirements.txt` đã chạy thành công.
-- **`ValueError: Expected collection name...`**: Đảm bảo `INDEX_NAME` trong `.env` từ 3-63 ký tự (ví dụ: `huit_egov`).
-- **`openai.BadRequestError: maximum context length`**: Đảm bảo `pdf_processor.py` chia nhỏ nội dung PDF đúng cách.
-- **`openai.BadRequestError: Missing tools[0].type`**: Kiểm tra `FUNCTIONS` trong `src/functions.py` có trường `"type": "function"`.
-
-## Hiệu suất và tối ưu hóa
-
-- **Thời gian xử lý PDF**: Phụ thuộc vào kích thước file và số chunk (ví dụ: ~7.45s cho 1 PDF).
-- **Tối ưu hóa**:
-  - Giảm `max_tokens` trong `pdf_processor.py` để tạo nhiều chunk nhỏ hơn, tăng độ chính xác truy xuất.
-  - Lưu trữ vector store trên đĩa bằng `chromadb.PersistentClient` thay vì RAM.
+ - **ModuleNotFoundError**: Kiểm tra pip install -r requirements.txt đã chạy thành công.
+ - **ValueError**: Expected collection name...: Đảm bảo collection_name trong bots_config.yaml từ 3-63 ký tự.
+ - **openai.BadRequestError**: maximum context length: Đảm bảo pdf_processor.py chia nhỏ nội dung PDF đúng cách.
+ - **openai.BadRequestError**: Missing tools[0].type: Kiểm tra FUNCTIONS trong src/common/functions.py có trường "type": "function".
+ - **unknown phân hệ**: Kiểm tra debug output trong masterbot/router.py để đảm bảo tên danh mục từ LLM khớp với subbots.

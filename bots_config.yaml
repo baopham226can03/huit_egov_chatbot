@@ -1,0 +1,7 @@
+bots:
+  - name: "Hướng dẫn sử dụng Bình Thuận"
+    data_path: "data/BinhThuan"
+    collection_name: "binhthuan_collection"
+  - name: "Cẩm nang tuyển sinh"
+    data_path: "data/TuyenSinh"
+    collection_name: "tuyensinh_collection"

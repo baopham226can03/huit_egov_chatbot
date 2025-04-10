@@ -1,30 +1,30 @@
-import os
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.chatbot import Chatbot
-from src.pdf_processor import PDFProcessor
-from src.vector_store import VectorStore
-
+import yaml
+from src.subbots.subbot import SubBot
+from src.masterbot.router import MasterBot
 
 def main():
-    # Khởi tạo các thành phần
-    data_dir = "data"
-    vector_store = VectorStore()
-    pdf_processor = PDFProcessor(vector_store)
+    # Load subbots from config
+    with open("bots_config.yaml", "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+    
+    subbots = {
+        bot["name"]: SubBot(bot["name"], bot["data_path"], bot["collection_name"])
+        for bot in config["bots"]
+    }
+    # print(f"Debug - Subbots initialized: {list(subbots.keys())}")
 
-    # Tải và xử lý tất cả PDF trong thư mục data
-    pdf_processor.process_pdfs(data_dir)
+    # Initialize masterbot
+    masterbot = MasterBot(subbots)
 
-    # Khởi tạo chatbot
-    chatbot = Chatbot(vector_store)
-
-    # Vòng lặp thử nghiệm chatbot
+    # User query loop
     while True:
-        user_input = input("Nhập câu hỏi (hoặc 'exit' để thoát): ")
-        if user_input.lower() == "exit":
+        query = input("Nhập câu hỏi (hoặc 'exit' để thoát): ")
+        if query.lower() == "exit":
             break
-        response = chatbot.handle_query(user_input)
-        print("Chatbot:", response)
+
+        response, category = masterbot.process_query(query)
+        # print(f"\n🧠 Phân hệ: {category}")
+        print(f"{response}")
 
 if __name__ == "__main__":
     main()
