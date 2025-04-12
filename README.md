@@ -7,7 +7,7 @@
 ## Mục tiêu dự án
 
 - **Hỗ trợ người dùng**: Cung cấp hướng dẫn chi tiết về cách sử dụng hệ thống HUIT eGov thông qua giao tiếp tự nhiên.
-- **Tích hợp RAG**: Sử dụng tài liệu PDF hướng dẫn để trả lời câu hỏi, kết hợp với khả năng truy xuất dữ liệu cá nhân (ví dụ: lịch cá nhân).
+- **Tích hợp API**: Sử dụng OpenAI API kết hợp với ChromaDB để trả lời câu hỏi người dùng từ tài liệu hướng dẫn và dữ liệu cá nhân.
 - **Dễ mở rộng**: Thiết kế mô-đun hóa để dễ dàng thêm tính năng hoặc tích hợp với các API thực tế của HUIT eGov.
 
 ## Tính năng chính
@@ -126,32 +126,19 @@ Các thư viện bao gồm:
 ### Chạy chương trình
 
 ```bash
-python main.py
+uvicorn main:app --reload --port 8000
+```
+
+### Cách dùng API
+```bash
+curl -X POST http://127.0.0.1:8000/ask \ -H "Content-Type: application/json" \ -d "{\"query\": \"Làm sao để có thể đăng nhập được ở app Bình Thuận"}"
 ```
 
 Chương trình sẽ:
 
 1. Khởi tạo các subbots từ bots_config.yaml, xử lý PDF trong từng thư mục và lưu vào ChromaDB.
 2. Khởi tạo masterbot để phân loại và chuyển hướng câu hỏi.
-3. Hiển thị prompt để bạn nhập câu hỏi.
 
-### Ví dụ tương tác
-
-```text
-Debug - Subbots initialized: ['FinanceBot', 'AcademicBot']
-Processing PDFs in data/finance: 100%|██████████| 1/1 [00:07<00:00,  7.45s/it]
-Processed and stored 6 chunks from data/BinhThuan.
-Processing PDFs in data/academics: 100%|██████████| 1/1 [00:05<00:00,  5.20s/it]
-Processed and stored 4 chunks from data/TuyenSinh.
-
-Nhập câu hỏi (hoặc 'exit' để thoát): Học phí kỳ này bao nhiêu?
-Học phí kỳ này là 15 triệu đồng.
-
-Nhập câu hỏi (hoặc 'exit' để thoát): Đăng ký HUIT eGov thế nào?
-Chọn Đăng ký, nhập đủ thông tin và xác nhận đăng ký.
-
-Nhập câu hỏi (hoặc 'exit' để thoát): exit
-```
 
 ## Quy trình hoạt động
 
